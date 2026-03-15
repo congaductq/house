@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>So Do Dien Chi Tiet - Nha 4 Tang</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #222; }
+
+.header {
+  background: #fff; padding: 20px 30px;
+  border-bottom: 3px solid #1565C0;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.header h1 { font-size: 20px; color: #1565C0; }
+.header .subtitle { font-size: 12px; color: #888; margin-top: 4px; }
+
+.tabs {
+  display: flex; gap: 4px; padding: 10px 30px 0;
+  background: #fff; border-bottom: 2px solid #ddd;
+}
+.tab {
+  padding: 8px 20px; cursor: pointer; border-radius: 8px 8px 0 0;
+  background: #f5f5f5; color: #666; font-weight: 600; font-size: 13px;
+  border: 1px solid #ddd; border-bottom: none; transition: all 0.2s;
+}
+.tab:hover { background: #e3f2fd; color: #1565C0; }
+.tab.active { background: #1565C0; color: #fff; border-color: #1565C0; }
+
+.content { padding: 20px 30px; }
+.floor-section { display: none; }
+.floor-section.active { display: block; }
+
+.floor-layout {
+  display: grid; grid-template-columns: 1fr 320px;
+  gap: 16px; margin-top: 8px;
+  min-height: 800px;
+}
+
+.plan-container {
+  position: relative; background: #fff;
+  border-radius: 10px; overflow: visible;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  cursor: crosshair;
+}
+.plan-container img { border-radius: 10px; }
+.plan-container img { width: 100%; display: block; }
+
+/* Coord display - outside image, in side panel */
+.coord-box {
+  background: #1a1a2e; color: #0f0; padding: 10px 14px;
+  border-radius: 6px; font-family: monospace; font-size: 13px;
+  text-align: center; min-height: 42px; display: flex;
+  align-items: center; justify-content: center;
+  border: 1px solid #333; user-select: none;
+}
+.coord-box .label { color: #888; font-size: 10px; display: block; margin-bottom: 2px; }
+.coord-box .val { color: #0f0; font-size: 14px; font-weight: bold; }
+
+/* SVG wires */
+.wire-svg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 1;
+}
+
+/* Overlay */
+.overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; z-index: 2;
+}
+.overlay .item {
+  position: absolute; pointer-events: all; cursor: pointer;
+  transition: transform 0.15s; transform: translate(-50%, -50%);
+}
+.overlay .item:hover { transform: translate(-50%, -50%) scale(1.3); z-index: 100; }
+
+.icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; color: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+  border: 2px solid rgba(255,255,255,0.9);
+}
+.icon-ac { background: #e53935; }
+.icon-wh { background: #43A047; }
+.icon-outlet { background: #7B1FA2; }
+.icon-panel { background: #1565C0; width: 34px; height: 34px; font-size: 8px; font-weight: 800;
+  border: 2.5px solid #fff; border-radius: 6px;
+  box-shadow: 0 0 10px rgba(21,101,192,0.5), 0 1px 6px rgba(0,0,0,0.4);
+}
+.icon-stove { background: #d32f2f; }
+.icon-washer { background: #F9A825; color: #333; }
+.icon-chandelier { background: #FF8F00; width: 28px; height: 28px; font-size: 8px; border-radius: 50%; border: 2px solid #fff; }
+.icon-downlight { background: #FFD54F; color: #333; width: 16px; height: 16px; font-size: 7px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.8); }
+.icon-switch { background: #9C27B0; }
+.icon-light { background: #FFC107; color: #333; }
+.icon-elev { background: #5D4037; width: 30px; height: 30px; border-radius: 6px; }
+
+.tooltip {
+  display: none; position: absolute; bottom: 110%; left: 50%;
+  transform: translateX(-50%); background: rgba(0,0,0,0.95); color: #fff;
+  padding: 10px 14px; border-radius: 8px; font-size: 12px;
+  white-space: nowrap; z-index: 300; border: 1px solid #1565C0;
+  line-height: 1.6; pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  max-width: 320px;
+}
+.item:hover .tooltip { display: block; }
+/* Items near top: show tooltip below */
+.item[style*="top:1%"] .tooltip,
+.item[style*="top:2%"] .tooltip,
+.item[style*="top:3%"] .tooltip,
+.item[style*="top:4%"] .tooltip,
+.item[style*="top:5%"] .tooltip,
+.item[style*="top:6%"] .tooltip,
+.item[style*="top:7%"] .tooltip,
+.item[style*="top:8%"] .tooltip,
+.item[style*="top:9."] .tooltip,
+.item[style*="top:10."] .tooltip {
+  bottom: auto; top: 110%;
+}
+
+/* Toggle */
+.toggle-bar { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.toggle-btn {
+  padding: 5px 12px; border-radius: 16px; cursor: pointer;
+  font-size: 11px; font-weight: 600; border: 2px solid; transition: all 0.2s;
+}
+.toggle-btn.active { color: #fff; }
+.toggle-btn.inactive { opacity: 0.4; }
+.toggle-wires { border-color: #1565C0; background: #1565C0; color: #fff; }
+.btn-download {
+  padding: 5px 12px; border-radius: 16px; cursor: pointer;
+  font-size: 11px; font-weight: 600; border: 2px solid #333;
+  background: #333; color: #fff; transition: all 0.2s; margin-left: auto;
+}
+.btn-download:hover { background: #555; }
+.toggle-wires.inactive { background: transparent; color: #1565C0; }
+.toggle-icons { border-color: #43A047; background: #43A047; color: #fff; }
+.toggle-icons.inactive { background: transparent; color: #43A047; }
+
+/* Side panel */
+.side-panel { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 10px; align-self: start; }
+.panel-card {
+  background: #fff; border-radius: 8px; padding: 14px;
+  border: 1px solid #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.panel-card h3 { font-size: 13px; color: #1565C0; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.panel-card table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.panel-card th { text-align: left; color: #888; padding: 2px 5px; font-weight: 600; }
+.panel-card td { padding: 2px 5px; border-top: 1px solid #f0f0f0; }
+.panel-card .mcb { color: #2E7D32; font-weight: 600; }
+.panel-card .rccb { color: #E65100; font-weight: 600; }
+.panel-card .wire { color: #1565C0; }
+.panel-card .warn { color: #c62828; font-size: 10px; margin-top: 6px; }
+
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+.legend-item .icon { width: 20px; height: 20px; font-size: 8px; flex-shrink: 0; }
+
+.wire-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.wire-leg-item { display: flex; align-items: center; gap: 4px; font-size: 9px; }
+.wire-leg-color { width: 16px; height: 3px; border-radius: 2px; }
+
+/* Main panel / diagram sections */
+.main-panel-section {
+  background: #fff; border-radius: 10px; padding: 20px;
+  border: 1px solid #e0e0e0; margin-top: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.main-panel-section h2 { color: #1565C0; margin-bottom: 14px; font-size: 16px; }
+.diagram-box {
+  background: #f8f9fa; border-radius: 6px; padding: 16px;
+  font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5;
+  overflow-x: auto; color: #333; white-space: pre; border: 1px solid #e0e0e0;
+}
+.diagram-box .pha-a { color: #e53935; }
+.diagram-box .pha-b { color: #F9A825; }
+.diagram-box .pha-c { color: #1565C0; }
+.diagram-box .pe { color: #2E7D32; }
+.diagram-box .label { color: #c62828; font-weight: bold; }
+
+.material-table {
+  width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px;
+}
+.material-table th { background: #1565C0; padding: 8px; text-align: left; color: #fff; }
+.material-table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+.material-table tr:hover { background: #f5f5f5; }
+
+.stair-diagram {
+  background: #f8f9fa; border-radius: 6px; padding: 16px;
+  font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4;
+  color: #333; white-space: pre; border: 1px solid #e0e0e0;
+}
+.phase-a { color: #e53935; font-weight: bold; }
+.phase-b { color: #F9A825; font-weight: bold; }
+.phase-c { color: #1565C0; font-weight: bold; }
+
+.notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.note-card {
+  background: #fff; border-radius: 6px; padding: 12px;
+  border-left: 3px solid #1565C0; font-size: 11px; line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.note-card strong { color: #E65100; }
+
+@media (max-width: 900px) {
+  .floor-layout { grid-template-columns: 1fr; }
+  .tabs { overflow-x: auto; }
+  .notes-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>SO DO DIEN CHI TIET - NHA 4 TANG CO THANG MAY</h1>
+    <div class="subtitle">Ban ve thi cong cho tho dien | He thong 3 pha | 2026-03-15</div>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#666;">
+    <div>Pha A: <span class="phase-a">Tang 1 + Bep tu</span></div>
+    <div>Pha B: <span class="phase-b">Tang 2</span></div>
+    <div>Pha C: <span class="phase-c">Tang 3 + Tang 4</span></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">Tu Dien Tong</div>
+  <div class="tab" onclick="showTab('floor1')">Tang 1</div>
+  <div class="tab" onclick="showTab('floor2')">Tang 2</div>
+  <div class="tab" onclick="showTab('floor3')">Tang 3</div>
+  <div class="tab" onclick="showTab('floor4')">Tang 4</div>
+  <div class="tab" onclick="showTab('staircase')">Den Cau Thang</div>
+  <div class="tab" onclick="showTab('materials')">Vat Tu</div>
+  <div class="tab" onclick="showTab('notes')">Luu Y</div>
+</div>
+
+<div class="content">
+
+<!-- ======== TU DIEN TONG ======== -->
+<div id="overview" class="floor-section active">
+  <div class="main-panel-section">
+    <h2>A. So Do Tu Dien Tong (Dat tai Tang 1 - Gan cua chinh)</h2>
+    <div class="diagram-box">
+                          <span class="label">EVN 3 PHA (A-B-C-N-PE)</span>
+                               |
+                     Cap tong 4x16mm2 + <span class="pe">PE 10mm2</span>
+                               |
+                   +========================+
+                   |   <span class="label">MCB TONG 3P 80A</span>      |
+                   |   (Schneider/LS)       |
+                   +========================+
+                               |
+                   +========================+
+                   |   <span class="label">SPD CHONG SET</span>        |
+                   |   3P+N, 40kA           |
+                   +========================+
+                               |
+                   +========================+
+                   |   <span class="label">RCCB 4P 63A 30mA</span>    |
+                   |   (Chong ro dien)      |
+                   +========================+
+                               |
+          +--------------------+--------------------+
+          |                    |                    |
+     <span class="pha-a">BUS PHA A</span>            <span class="pha-b">BUS PHA B</span>            <span class="pha-c">BUS PHA C</span>
+          |                    |                    |
+          |                    |               +----+----+
+          |                    |               |         |
+   +======+=======+    +======+=======+  +====+=====+ +====+=====+
+   |<span class="pha-a">MCB 1P 32A</span>    |    |<span class="pha-b">MCB 1P 40A</span>    |  |<span class="pha-c">MCB 1P 32A</span>| |<span class="pha-c">MCB 1P 32A</span>|
+   |  Tu Tang 1   |    |  Tu Tang 2   |  | Tu Tang 3| | Tu Tang 4|
+   |Cap 2x6+PE    |    |Cap 2x6+PE    |  |Cap 2x6+PE| |Cap 2x6+PE|
+   +==============+    +==============+  +==========+ +==========+
+
+          +--------------------+--------------------+
+          |                    |                    |
+     <span class="pha-a">BUS PHA A</span>            <span class="pha-b">BUS PHA B</span>            <span class="pha-c">BUS PHA C</span>
+          |                    |                    |
+          +--------------------+--------------------+
+                               |
+                   +===========+============+
+                   |   <span class="label">MCB 3P 32A</span>            |
+                   |   THANG MAY 3 PHA      |
+                   |   Cap 5x6mm2           |
+                   |   (A-B-C-N-PE)         |
+                   +========================+</div>
+  </div>
+  <div class="main-panel-section" style="margin-top:12px;">
+    <h2>Bang Ke MCB Nhanh Tu Dien Tong</h2>
+    <table class="material-table">
+      <tr><th>STT</th><th>MCB</th><th>Pha</th><th>Tai</th><th>Cap (mm2)</th></tr>
+      <tr><td>1</td><td class="phase-a">MCB 1P 32A</td><td class="phase-a">A</td><td>Tu tang 1</td><td>2x6 + PE</td></tr>
+      <tr><td>2</td><td class="phase-b">MCB 1P 40A</td><td class="phase-b">B</td><td>Tu tang 2</td><td>2x6 + PE</td></tr>
+      <tr><td>3</td><td class="phase-c">MCB 1P 32A</td><td class="phase-c">C</td><td>Tu tang 3</td><td>2x6 + PE</td></tr>
+      <tr><td>4</td><td class="phase-c">MCB 1P 32A</td><td class="phase-c">C</td><td>Tu tang 4</td><td>2x6 + PE</td></tr>
+      <tr><td>5</td><td style="color:#c62828;font-weight:bold">MCB 3P 32A</td><td>A-B-C</td><td>Thang may</td><td>5x6</td></tr>
+    </table>
+  </div>
+  <div class="main-panel-section" style="margin-top:12px;">
+    <h2>He Thong Tiep Dia</h2>
+    <div class="diagram-box">
+                 <span class="pe">COC TIEP DIA</span> (it nhat 2 coc, dai 2.4m, cach nhau 3m)
+                       |
+                  Day dong tran <span class="pe">10mm2</span>
+                       |
+              <span class="label">THANH TIEP DIA CHINH</span> (tang 1, trong tu tong)
+                       |
+                       +-- PE tu dien tang 1
+                       +-- PE tu dien tang 2
+                       +-- PE tu dien tang 3
+                       +-- PE tu dien tang 4
+                       +-- PE thang may
+
+              <span class="label">*** Dien tro tiep dia phai &lt; 4 ohm ***</span></div>
+  </div>
+</div>
+
+<!-- ======== TANG 1 ======== -->
+<div id="floor1" class="floor-section">
+  <div class="toggle-bar">
+    <div class="toggle-btn toggle-wires active" onclick="toggleLayer(this,'floor1','wires-layer')">Day dien</div>
+    <div class="toggle-btn toggle-icons active" onclick="toggleLayer(this,'floor1','icons-layer')">Thiet bi</div>
+    <div class="btn-download" onclick="downloadFloor('plan-floor1','Tang1')">Download PNG</div>
+  </div>
+  <div class="floor-layout">
+    <div class="plan-container" id="plan-floor1" onmousemove="showCoord(event,'coord1')" onclick="copyCoord(event)">
+      <img src="final-with-interior/base/layout1-if.png" alt="Tang 1">
+      <!-- EXACT positions from user + aligned downlights -->
+      <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- ====== STAIRCASE NO-GO: x=48-72%, y=35-52% ====== -->
+        <!-- All wires route via LEFT hallway (x=15) or walls to avoid stairs -->
+
+        <!-- ====== MAIN BLUE TRUNK - Perimeter loop (highlighted) ====== -->
+        <!-- MCB tap: MCB → left wall -->
+        <polyline points="49.7,54.4 4,54.4" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- LEFT WALL (full height) -->
+        <polyline points="4,3 4,93.3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- TOP / BACK WALL -->
+        <polyline points="4,3 96,3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- RIGHT WALL (split: top section + bottom section, skip stairs zone) -->
+        <polyline points="96,3 96,31.2" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,57.2 96,93.3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- BOTTOM / FRONT WALL -->
+        <polyline points="4,93.3 96,93.3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- KITCHEN CROSS (internal, y=31.2, split - removed segment between 4.3,31.1 and 46.7,31.1) -->
+        <polyline points="46.7,31.2 96,31.2" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+
+        <!-- ====== AC (red) - direct to MCB ====== -->
+        <!-- AC kitchen 52.4,29.3: MCB up → left (H+V) -->
+        <polyline points="49.3,53.9 49.3,29.3" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="49.3,29.3 52.4,29.3" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <!-- AC living 50.9,56.9: MCB down → right (H+V) -->
+        <polyline points="49.3,53.9 49.3,56.9" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="49.3,56.9 50.9,56.9" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- ====== RIGHT SIDE APPLIANCES (from blue trunk at y=31.2) ====== -->
+        <!-- Nong lanh 89.9,32.3: from blue trunk → down (H+V) -->
+        <polyline points="89.9,31.2 89.9,32.3" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <!-- Bep tu 89.8,19.1: from blue trunk riser up -->
+        <polyline points="96,19.1 89.8,19.1" fill="none" stroke="#d32f2f" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <!-- Lo nuong 89.4,24.4: from blue trunk riser -->
+        <polyline points="96,24.4 89.4,24.4" fill="none" stroke="#d32f2f" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.65"/>
+        <!-- Tu lanh 92.0,28.6: from blue trunk → down (H+V) -->
+        <polyline points="92.0,31.2 92.0,28.6" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Bep socket 77.6,29.7: from blue trunk → down (H+V) -->
+        <polyline points="77.6,31.2 77.6,29.7" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+
+        <!-- ====== SOCKETS (purple) ====== -->
+        <!-- WC socket 91.5,32.7: from blue trunk → down -->
+        <polyline points="91.5,31.2 91.5,32.7" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Right wall sockets below (from right wall riser) -->
+        <polyline points="96,57.8 92.8,57.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,75.9 93.3,75.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="93.3,93.3 93.3,90.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Left wall sockets -->
+        <polyline points="4,9.1 8.9,9.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,28.3 9.0,28.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,53.8 7.2,53.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,72.6 10.6,72.6" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,59.2 8.8,59.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,89.1 10.1,89.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- (top socket + entrance socket wires moved to hallway trunk section below) -->
+
+        <!-- ====== SOCKETS - top & entrance (via hallway trunk, avoiding stairs) ====== -->
+        <!-- Top socket 70.5,5.1: from top blue line → down -->
+        <polyline points="70.5,3 70.5,5.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Entrance socket 56.7,90.4: from bottom trunk → up -->
+        <polyline points="56.7,93.3 56.7,90.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+
+        <!-- ====== CHANDELIERS (orange, from kitchen switch 48.3,29.9) H+V only ====== -->
+        <!-- CH ban an 28.3,18.0: switch → left → up -->
+        <polyline points="48.3,29.9 28.3,29.9" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="28.3,29.9 28.3,18.0" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <!-- CH khu bep 61.1,18.4: switch → right → up -->
+        <polyline points="48.3,29.9 61.1,29.9" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="61.1,29.9 61.1,18.4" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- ====== DOWNLIGHTS kitchen (yellow, 2 sections from switch at 48.3,29.9) H+V only ====== -->
+        <!-- Section 1 (ban an): switch → left → up → horizontal -->
+        <polyline points="48.3,29.9 12.8,29.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="12.8,29.9 12.8,10.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="12.8,10.3 36.6,10.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="12.4,23.4 36.7,23.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Section 2 (bep): switch → right → up → horizontal -->
+        <polyline points="48.3,29.9 59.3,29.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.3,29.9 59.3,10.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.3,10.5 83.6,10.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.4,23.3 83.1,23.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- ====== DOWNLIGHTS living room (yellow, 2 sections from switches at 43.6,93.4) ====== -->
+        <!-- Switch feed: from bottom trunk up to switches -->
+        <polyline points="43.6,93.3 43.6,93.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.5"/>
+        <!-- Section 1 (left): switches → up to DL row -->
+        <polyline points="43.6,93.4 19.0,93.4 19.0,63.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="19.0,63.9 39.0,63.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="19.5,84.5 39.2,84.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Section 2 (right): switches → up to DL row -->
+        <polyline points="43.6,93.4 59.0,93.4 59.0,63.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.0,63.8 79.2,63.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.0,84.5 79.0,84.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Chandelier feed from switches H+V only -->
+        <polyline points="43.6,93.4 43.6,75.2" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="43.6,75.2 67.9,75.2" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- ====== DOWNLIGHTS hallway (now wired from SW1 section above) ====== -->
+
+        <!-- ====== DOWNLIGHT WC (yellow, from WC switch → DL) H+V only ====== -->
+        <!-- (wire now in SW WC section above) -->
+
+        <!-- ====== SWITCHES (purple) ====== -->
+        <!-- SW1 stairs+hallway 56.4,54.9: MCB → right (below stairs) -->
+        <polyline points="49.3,54.9 56.4,54.9" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- Hallway DLs from SW1 - connected rectangle (H+V only) -->
+        <!-- SW → left to right-column DLs -->
+        <polyline points="56.4,54.9 50.4,54.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Right column: bottom → top -->
+        <polyline points="50.4,54.9 50.4,37.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Top row: right → left -->
+        <polyline points="50.4,37.3 16.9,37.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Left column: top → bottom -->
+        <polyline points="16.8,37.3 16.7,51.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Bottom row: left → right -->
+        <polyline points="16.7,51.4 50.4,50.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- SW Kitchen + WC: connected directly from MCB (no separate trunk wire needed) -->
+        <!-- WC DL wire: switch → right → down to DL -->
+        <polyline points="48.7,32.6 85.0,32.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="85.0,32.6 85.0,35.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- ====== OUTDOOR LIGHTING - 3 independent sections ====== -->
+
+        <!-- Section 1: MAT SAU (back/top) - SW at 20.0,5.4 -->
+        <!-- SW → right to NT1, then right to NT2 -->
+        <polyline points="20.0,5.4 34.6,5.4" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="34.6,5.4 34.6,0.8" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="34.6,5.4 64.4,5.4" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="64.4,5.4 64.4,1.2" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <!-- SW mat sau feed from blue top trunk -->
+        <polyline points="20.0,3 20.0,5.4" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+
+        <!-- Section 2: MAT TRAI (left) - SW at 7.5,52.9 -->
+        <!-- SW → left to wall, then up/down to 5 lights -->
+        <polyline points="4,52.9 7.5,52.9" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="2,20 2,80" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="4,52.9 2,52.9" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- Section 3: MAT TRUOC (front/bottom) - SW at 43.5,93.2 -->
+        <!-- SW → down to front wall, then left/right to 2 lights -->
+        <polyline points="43.5,93.2 43.5,97" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="35,97 65,97" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+      </svg>
+      <div class="overlay icons-layer">
+        <!-- MCB -->
+        <div class="item" style="top:54.4%;left:49.7%"><div class="icon icon-panel">MCB<br>T1</div>
+          <div class="tooltip"><strong>MCB - TU DIEN TANG 1 (PHA A)</strong><br>MCB 32A tu tong | Cap 2x6mm2+PE<br>Cao 1.4m | 10 mach nhanh</div></div>
+        <!-- AC -->
+        <div class="item" style="top:29.2%;left:52.1%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>1.1 - Dieu hoa khu bep/an</strong><br>MCB 20A | 2x2.5+PE | 9000BTU<br>O cam rieng cao 2.2m</div></div>
+        <div class="item" style="top:57.1%;left:51.3%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>1.2 - Dieu hoa phong khach</strong><br>MCB 20A | 2x2.5+PE | 9000BTU<br>O cam rieng cao 2.2m</div></div>
+        <!-- Bep tu -->
+        <div class="item" style="top:19.1%;left:89.8%"><div class="icon icon-stove">BT</div>
+          <div class="tooltip"><strong>1.3 - BEP TU (Electric Stove)</strong><br>MCB 32A | 2x6+PE<br><span style="color:#e53935">*** Day 6mm2, MCB 32A ***</span></div></div>
+        <!-- Lo nuong -->
+        <div class="item" style="top:24.4%;left:89.4%"><div class="icon icon-stove">LN</div>
+          <div class="tooltip"><strong>1.3b - LO NUONG (Oven)</strong><br>MCB 20A | 2x4+PE</div></div>
+        <!-- Nong lanh -->
+        <div class="item" style="top:32.3%;left:89.9%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>1.4 - Nong lanh WC T1</strong><br>MCB 20A + RCCB 25A 30mA<br>2x4+PE | Cao 1.8m</div></div>
+        <!-- Sockets (10 o cam - removed 19.0%,63.0%) -->
+        <div class="item" style="top:32.7%;left:91.5%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - WC</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:29.7%;left:77.6%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Bep (mat bep)</strong><br>MCB 16A | 2x2.5+PE | cao 1.1m</div></div>
+        <div class="item" style="top:5.4%;left:70.4%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Khu an (phia sau)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:9.1%;left:8.9%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Phia sau trai</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:28.3%;left:9.0%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Tuong trai (bep)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:53.8%;left:7.2%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Tuong trai (khach)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:75.9%;left:93.3%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - P.Ngu (phai)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:72.6%;left:10.6%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - P.Khach (trai)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:90.4%;left:56.7%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Loi vao (mat truoc)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:57.8%;left:92.8%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - P.Ngu (phai tren)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:28.6%;left:92.0%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Tu lanh (Refrig)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:90.8%;left:93.3%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Mat truoc (phai)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:89.1%;left:10.1%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Mat truoc (trai)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <div class="item" style="top:59.2%;left:8.8%"><div class="icon icon-outlet">OC</div>
+          <div class="tooltip"><strong>OC - Tuong trai (khach duoi)</strong><br>MCB 16A | 2x2.5+PE</div></div>
+        <!-- Chandeliers -->
+        <div class="item" style="top:75.2%;left:67.9%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - Phong khach</strong><br>Tren khu sofa<br>Mach 1.8 | MCB 10A | 2x1.5</div></div>
+        <div class="item" style="top:18.0%;left:28.3%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - Ban an tron</strong><br>Mach 1.8 | MCB 10A | 2x1.5</div></div>
+        <div class="item" style="top:18.4%;left:61.1%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - Khu bep</strong><br>Mach 1.8 | MCB 10A | 2x1.5</div></div>
+        <!-- Downlights - Kitchen (8 bong, 2 hang thang) -->
+        <!-- DL Kitchen Section 1 (ban an, 4 bong) -->
+        <div class="item" style="top:10.3%;left:12.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL An S1</div></div>
+        <div class="item" style="top:10.6%;left:36.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL An S1</div></div>
+        <div class="item" style="top:23.4%;left:12.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL An S1</div></div>
+        <div class="item" style="top:23.5%;left:36.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL An S1</div></div>
+        <!-- DL Kitchen Section 2 (bep, 4 bong) -->
+        <div class="item" style="top:10.5%;left:59.3%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Bep S2</div></div>
+        <div class="item" style="top:10.8%;left:83.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Bep S2</div></div>
+        <div class="item" style="top:23.5%;left:83.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Bep S2</div></div>
+        <div class="item" style="top:23.3%;left:59.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Bep S2</div></div>
+        <!-- Downlights - Living room + P.Ngu (8 bong, 2 hang thang) -->
+        <!-- Row 1: y≈63.8% aligned; Row 2: y≈84.5% aligned -->
+        <!-- DL Section 1 (left, 4 bong) -->
+        <div class="item" style="top:63.9%;left:18.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S1</div></div>
+        <div class="item" style="top:63.8%;left:38.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S1</div></div>
+        <div class="item" style="top:84.5%;left:19.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S1</div></div>
+        <div class="item" style="top:84.6%;left:39.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S1</div></div>
+        <!-- DL Section 2 (right, 4 bong) -->
+        <div class="item" style="top:63.8%;left:58.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S2</div></div>
+        <div class="item" style="top:64.1%;left:79.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S2</div></div>
+        <div class="item" style="top:84.5%;left:79.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S2</div></div>
+        <div class="item" style="top:84.5%;left:58.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Khach S2</div></div>
+        <!-- Downlights - Hallway (4, from SW1) -->
+        <div class="item" style="top:37.2%;left:16.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:37.3%;left:50.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:51.1%;left:50.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:51.1%;left:16.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <!-- Downlights - WC (2, IP44) -->
+        <div class="item" style="top:35%;left:85%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC (IP44)</div></div>
+        <!-- Outdoor lights -->
+        <div class="item" style="top:0.8%;left:34.6%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat sau 1/2</strong><br>LED IP65</div></div>
+        <div class="item" style="top:1.2%;left:64.4%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat sau 2/2</strong><br>LED IP65</div></div>
+        <!-- Switch - Den ngoai mat sau -->
+        <div class="item" style="top:5.4%;left:20.0%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ngoai mat sau</strong><br>2 den LED IP65<br>Cao 1.2m</div></div>
+        <div class="item" style="top:97%;left:35%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat truoc 1/2</strong><br>LED IP65</div></div>
+        <div class="item" style="top:97%;left:65%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat truoc 2/2</strong><br>LED IP65</div></div>
+        <div class="item" style="top:20%;left:2%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat trai 1/5</strong><br>LED IP65</div></div>
+        <div class="item" style="top:35%;left:2%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat trai 2/5</strong><br>LED IP65</div></div>
+        <div class="item" style="top:50%;left:2%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat trai 3/5</strong><br>LED IP65</div></div>
+        <div class="item" style="top:65%;left:2%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat trai 4/5</strong><br>LED IP65</div></div>
+        <div class="item" style="top:80%;left:2%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>
+          <div class="tooltip"><strong>Den ngoai - Mat trai 5/5</strong><br>LED IP65<br>(Mat phai ko can - sat nha ben)</div></div>
+        <!-- Switch - Kitchen lighting (4 buttons: 2 DL sections + 2 chandeliers) -->
+        <div class="item" style="top:29.9%;left:48.3%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den Bep/An (4 nut)</strong><br>Nut 1: DL S1 (ban an)<br>Nut 2: DL S2 (bep)<br>Nut 3: CH ban an<br>Nut 4: CH bep<br>Cao 1.2m</div></div>
+        <!-- Switch - WC light -->
+        <div class="item" style="top:32.6%;left:48.7%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den WC T1</strong><br>Cong tac den nha ve sinh<br>Cao 1.2m</div></div>
+        <!-- Switch - Den ngoai mat trai -->
+        <div class="item" style="top:52.9%;left:7.5%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ngoai mat trai</strong><br>5 den LED IP65<br>Cao 1.2m</div></div>
+        <!-- Living room switches (2 switches at entrance, 4 buttons total) -->
+        <div class="item" style="top:93.2%;left:43.5%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Khach (4 nut)</strong><br>SW1 (2 nut): CH P.Khach + Den ngoai mat truoc<br>SW2 (2 nut): DL S1 + DL S2<br>Cao 1.2m</div></div>
+        <!-- SW1 - Stairs + Hallway (2 buttons) -->
+        <div class="item" style="top:54.9%;left:56.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Cau thang + Hanh lang (2 nut)</strong><br>Nut 1: Den cau thang (dao chieu)<br>Nut 2: DL Hanh lang<br>Cao 1.2m</div></div>
+        <!-- Thang may -->
+        <div class="item" style="top:42%;left:68%"><div class="icon icon-elev">TM</div>
+          <div class="tooltip"><strong>Thang may 3 pha 450kg</strong><br>MCB 3P 32A | 5x6mm2</div></div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-card">
+        <h3>Tu Dien Tang 1 - <span class="phase-a">PHA A</span> - MCB 32A</h3>
+        <table>
+          <tr><th>Mach</th><th>CB</th><th>Tai</th><th>Day</th></tr>
+          <tr><td>1.1</td><td class="mcb">20A</td><td>DH Bep/An</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>1.2</td><td class="mcb">20A</td><td>DH P.Khach</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>1.3</td><td class="mcb">32A</td><td>Bep tu</td><td class="wire" style="color:#c62828">2x6+PE</td></tr>
+          <tr><td>1.4</td><td class="rccb">20A+RCCB</td><td>NL WC</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>1.5</td><td class="mcb">16A</td><td>OC P.Khach</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>1.6</td><td class="mcb">16A</td><td>OC P.Ngu</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>1.7</td><td class="mcb">16A</td><td>OC Bep</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>1.8</td><td class="mcb">10A</td><td>Den P.Khach+HL</td><td class="wire">2x1.5</td></tr>
+          <tr><td>1.9</td><td class="mcb">10A</td><td>Den Ngu+Bep+WC</td><td class="wire">2x1.5</td></tr>
+          <tr><td>1.10</td><td class="mcb">10A</td><td>Den ngoai troi</td><td class="wire">2x1.5</td></tr>
+        </table>
+        <div class="warn">* Bep tu: day 6mm2, MCB 32A</div>
+        <div class="warn">* Nong lanh: RCCB 25A 30mA rieng</div>
+      </div>
+      <div class="panel-card">
+        <h3>Toa Do (hover hinh, click de copy)</h3>
+        <div class="coord-box" id="coord1"><span class="label">Di chuot len hinh</span></div>
+      </div>
+      <div class="panel-card">
+        <h3>Chu Thich</h3>
+        <div class="legend-grid">
+          <div class="legend-item"><div class="icon icon-panel" style="width:20px;height:20px;font-size:6px;border-radius:3px">MCB</div>Tu dien (blue)</div>
+          <div class="legend-item"><div class="icon icon-ac">AC</div>Dieu hoa (red)</div>
+          <div class="legend-item"><div class="icon icon-wh">NL</div>Nong lanh (green)</div>
+          <div class="legend-item"><div class="icon icon-outlet">OC</div>O cam</div>
+          <div class="legend-item"><div class="icon icon-chandelier" style="width:20px;height:20px;font-size:7px">CH</div>Den chum/tha</div>
+          <div class="legend-item"><div class="icon icon-downlight" style="width:20px;height:20px">DL</div>Downlight</div>
+          <div class="legend-item"><div class="icon icon-stove">BT</div>Bep tu</div>
+          <div class="legend-item"><div class="icon icon-elev" style="width:20px;height:20px">TM</div>Thang may</div>
+          <div class="legend-item"><div class="icon icon-washer">MG</div>May giat (yellow)</div>
+          <div class="legend-item"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">NT</div>Den ngoai troi</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TANG 2 ======== -->
+<div id="floor2" class="floor-section">
+  <div class="toggle-bar">
+    <div class="toggle-btn toggle-wires active" onclick="toggleLayer(this,'floor2','wires-layer')">Day dien</div>
+    <div class="toggle-btn toggle-icons active" onclick="toggleLayer(this,'floor2','icons-layer')">Thiet bi</div>
+    <div class="btn-download" onclick="downloadFloor('plan-floor2','Tang2')">Download PNG</div>
+  </div>
+  <div class="floor-layout">
+    <div class="plan-container" id="plan-floor2" onmousemove="showCoord(event,'coord2')" onclick="copyCoord(event)">
+      <img src="final-with-interior/base/layout2-if.png" alt="Tang 2">
+      <!-- FLOOR 2 - All positions from user -->
+      <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Blue trunk: perimeter + MCB tap (same pattern as Floor 1) -->
+        <polyline points="43.3,64.0 4,64.0" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,8.5 4,96" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,8.5 96,8.6" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,8.6 96,40" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,65 96,96" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,96 96,96" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,40 96,40" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+
+        <!-- Water heaters from perimeter -->
+        <polyline points="94.4,40 94.4,36.8" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="6.8,65 6.8,75.0" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="94.0,65 94.0,65.6" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- Balcony light: SW 10.2,20.8 → light 7.2,35.8 -->
+        <polyline points="20.8,8.5 20.8,10.2" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="20.8,10.2 35.8,10.2" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="35.8,10.2 35.8,7.2" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- AC direct to MCB -->
+        <polyline points="43.3,64.0 43.3,36.1" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="43.3,36.1 49.8,36.1" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="43.3,64.0 41.3,64.0 41.3,63.1" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="43.3,64.0 43.3,68.1" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="43.3,68.1 51.0,68.1" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- === TOP BEDROOM: SW 33.5,43.6 → DLs (H+V only) === -->
+        <polyline points="43.6,40 43.6,33.5" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- SW → left to bed DLs -->
+        <polyline points="43.6,33.5 17.0,33.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.0,33.5 17.0,14.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.0,14.6 49.5,14.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.0,28.0 49.5,28.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- SW → right to walkin closet DLs via route: 33.4,43→33.4,59.8→29.1,59.8→29.4,79.7→26.2,79.8→14.6,79.8 -->
+        <polyline points="43.0,33.4 59.8,33.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.8,33.4 59.8,29.1" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="59.8,29.1 79.7,29.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.8,29.4 79.8,14.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- CH: SW → left → up -->
+        <polyline points="43.6,33.5 27.8,33.5" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="27.8,33.5 27.8,20.0" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- === TOP BATHROOM: SW 28.9,87.3 → 3 DLs at y=33.2 (H+V) === -->
+        <polyline points="87.3,40 87.3,28.9" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="87.3,33.2 66.2,33.2" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.0,33.2 92.1,33.2" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === MID BEDROOM: SW 48.8,41.7 → 4 DLs (H+V) === -->
+        <polyline points="41.7,40 41.7,48.8" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="41.7,48.8 15.5,48.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="15.5,47.0 33.0,47.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="15.5,58.0 33.0,58.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === MID BATHROOM: SW 65.0,16.9 → 3 DLs (H+V) === -->
+        <polyline points="4,65.0 16.9,65.0" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="16.9,65.0 16.9,71.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="10.4,71.0 36.8,71.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === BOTTOM BEDROOM: SW 72.4,44.4 → DLs (H+V) === -->
+        <polyline points="44.4,64.0 44.4,72.4" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- S1: SW → down along x≈44 to DL row, then horizontal -->
+        <polyline points="44.0,72.5 43.8,81.1" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="43.8,81.0 17.5,81.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.5,81.0 17.5,91.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.5,91.5 43.5,91.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- S2: SW → right → down -->
+        <polyline points="44.4,72.4 79.5,72.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.5,72.4 79.5,88.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === SW stairs+hanh lang 63.5,60.8 → connect to MCB === -->
+        <polyline points="60.8,64.0 60.8,63.5" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="60.8,64.0 43.3,64.0" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- Hanh lang DLs: SW → left → up -->
+        <polyline points="60.8,63.5 51.0,63.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="51.0,63.5 51.0,42.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Stairs DLs: SW → right → rectangle (H+V aligned) -->
+        <polyline points="60.8,63.5 65.0,63.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="65.0,63.5 65.0,61.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="65.0,61.5 91.0,61.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="91.0,61.5 91.0,42.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="91.0,42.5 65.0,42.5" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === BOTTOM BATHROOM: SW 76.6,88.0 → 3 DLs (H+V) === -->
+        <!-- SW → up to DL row -->
+        <polyline points="88.0,76.6 88.0,70.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- DL row horizontal -->
+        <polyline points="65.9,70.7 91.3,70.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- Sockets from perimeter -->
+        <!-- Top bedroom sockets -->
+        <polyline points="96,16.1 96.5,16.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,10.4 93.5,10.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="61.4,8.5 61.4,17.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,13.0 9.7,13.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,28.6 9.9,28.6" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,34.9 7.0,34.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="88.1,40 88.1,37.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Mid bedroom sockets -->
+        <polyline points="4,51.8 9.0,51.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,61.0 9.1,61.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,46.2 6.9,46.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="41.0,40 41.0,55.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="25.0,65 25.0,74.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,74.8 14.9,74.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <!-- Bottom bedroom sockets -->
+        <polyline points="4,78.2 9.0,78.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,94.1 9.0,94.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="58.9,96 58.9,89.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,92.5 95.4,92.5" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,65.3 88.5,65.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="64.4,96 64.4,95.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="66.9,8.6 66.9,10.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+      </svg>
+      <div class="overlay icons-layer">
+        <!-- MCB -->
+        <div class="item" style="top:64.0%;left:43.3%"><div class="icon icon-panel">MCB<br>T2</div>
+          <div class="tooltip"><strong>MCB - TU DIEN TANG 2 (PHA B)</strong><br>MCB 40A tu tong | Cap 2x6mm2+PE</div></div>
+        <!-- AC (3) -->
+        <div class="item" style="top:36.1%;left:49.8%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu tren</strong><br>MCB 20A | 2x2.5+PE</div></div>
+        <div class="item" style="top:63.1%;left:41.3%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu giua</strong><br>MCB 20A | 2x2.5+PE</div></div>
+        <div class="item" style="top:68.1%;left:51.0%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu duoi</strong><br>MCB 20A | 2x2.5+PE</div></div>
+
+        <!-- Water heaters (3) -->
+        <div class="item" style="top:36.8%;left:94.4%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC tren</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+        <div class="item" style="top:75.0%;left:6.8%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC giua</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+        <div class="item" style="top:65.6%;left:94.0%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC duoi</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+
+        <!-- === TOP BEDROOM === -->
+        <div class="item" style="top:20.0%;left:27.8%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - P.Ngu tren</strong></div></div>
+        <!-- DL bed section (evenly spaced grid) -->
+        <div class="item" style="top:14.6%;left:17.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:14.6%;left:49.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:28.0%;left:17.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:28.0%;left:49.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <!-- DL walkin closet (evenly spaced) -->
+        <div class="item" style="top:14.6%;left:79.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:26.4%;left:79.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <!-- SW top bedroom -->
+        <div class="item" style="top:33.5%;left:43.6%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu tren</strong><br>DL bed + walkin closet + CH<br>Cao 1.2m</div></div>
+        <!-- DL bathroom top -->
+        <div class="item" style="top:33.2%;left:66.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:33.2%;left:79.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:33.2%;left:92.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:28.9%;left:87.3%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC tren</strong><br>3 DL bathroom<br>Cao 1.2m</div></div>
+        <!-- Sockets top bedroom -->
+        <div class="item" style="top:16.1%;left:96.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:10.4%;left:93.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:17.9%;left:61.4%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:13.0%;left:9.7%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:28.6%;left:9.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:34.9%;left:7.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:37.3%;left:88.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC tren</div></div>
+
+        <!-- === MIDDLE BEDROOM === -->
+        <!-- DL middle -->
+        <div class="item" style="top:47.0%;left:15.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu giua</div></div>
+        <div class="item" style="top:47.0%;left:33.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu giua</div></div>
+        <div class="item" style="top:58.0%;left:15.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu giua</div></div>
+        <div class="item" style="top:58.0%;left:33.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu giua</div></div>
+        <div class="item" style="top:48.8%;left:41.7%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu giua</strong><br>4 DL<br>Cao 1.2m</div></div>
+        <!-- DL bathroom mid -->
+        <div class="item" style="top:71.0%;left:10.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC giua (IP44)</div></div>
+        <div class="item" style="top:71.0%;left:23.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC giua (IP44)</div></div>
+        <div class="item" style="top:71.0%;left:36.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC giua (IP44)</div></div>
+        <div class="item" style="top:65.0%;left:16.9%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC giua</strong><br>3 DL bathroom<br>Cao 1.2m</div></div>
+        <!-- Sockets mid -->
+        <div class="item" style="top:51.8%;left:9.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu giua</div></div>
+        <div class="item" style="top:61.0%;left:9.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu giua</div></div>
+        <div class="item" style="top:46.2%;left:6.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu giua</div></div>
+        <div class="item" style="top:55.1%;left:41.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu giua</div></div>
+        <div class="item" style="top:74.8%;left:25.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC giua</div></div>
+        <div class="item" style="top:74.8%;left:14.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC giua</div></div>
+
+        <!-- === BOTTOM BEDROOM === -->
+        <!-- DL bottom section 1 -->
+        <div class="item" style="top:81.0%;left:17.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S1</div></div>
+        <div class="item" style="top:81.0%;left:43.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S1</div></div>
+        <div class="item" style="top:91.5%;left:17.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S1</div></div>
+        <div class="item" style="top:91.5%;left:43.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S1</div></div>
+        <!-- DL bottom section 2 -->
+        <div class="item" style="top:81.0%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S2</div></div>
+        <div class="item" style="top:88.5%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi S2</div></div>
+        <div class="item" style="top:72.4%;left:44.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu duoi</strong><br>DL S1 + S2<br>Cao 1.2m</div></div>
+        <!-- DL bathroom bottom -->
+        <div class="item" style="top:70.5%;left:65.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:70.8%;left:78.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:70.7%;left:91.3%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:76.6%;left:88.0%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC duoi</strong><br>3 DL bathroom<br>Cao 1.2m</div></div>
+        <!-- Sockets bottom -->
+        <div class="item" style="top:78.2%;left:9.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:94.1%;left:9.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:89.3%;left:58.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:92.5%;left:95.4%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:66.0%;left:79.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC duoi</div></div>
+        <div class="item" style="top:65.3%;left:88.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC duoi</div></div>
+        <div class="item" style="top:95.3%;left:64.4%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:10.2%;left:66.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+
+        <!-- Balcony light -->
+        <div class="item" style="top:7.2%;left:35.8%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">BL</div>
+          <div class="tooltip"><strong>Den ban cong</strong><br>LED IP65</div></div>
+        <div class="item" style="top:10.2%;left:20.8%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ban cong</strong><br>Cao 1.2m</div></div>
+        <!-- DL Hanh lang T2 -->
+        <div class="item" style="top:42.6%;left:51.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:52.0%;left:51.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:60.7%;left:50.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <!-- DL Stairs (4) -->
+        <div class="item" style="top:61.5%;left:65.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:61.5%;left:91.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:42.5%;left:91.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:42.5%;left:65.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <!-- SW stairs + hanh lang -->
+        <div class="item" style="top:63.5%;left:60.8%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Cau thang + Hanh lang (3 nut)</strong><br>Nut 1: Den cau thang (dao chieu)<br>Nut 2: DL Hanh lang (3)<br>Nut 3: DL Cau thang (4)<br>Cao 1.2m</div></div>
+        <div class="item" style="top:48%;left:65%"><div class="icon icon-elev">TM</div>
+          <div class="tooltip">Thang may (di qua)</div></div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-card"><div class="coord-box" id="coord2"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card">
+        <h3>Tu Dien Tang 2 - <span class="phase-b">PHA B</span> - MCB 40A</h3>
+        <table>
+          <tr><th>Mach</th><th>CB</th><th>Tai</th><th>Day</th></tr>
+          <tr><td>2.1</td><td class="mcb">20A</td><td>DH P.Ngu</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>2.2</td><td class="mcb">20A</td><td>DH P.Ngu</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>2.3</td><td class="mcb">20A</td><td>DH P.Ngu</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>2.4</td><td class="rccb">20A+RCCB</td><td>NL WC Master</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>2.5</td><td class="rccb">20A+RCCB</td><td>NL WC</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>2.6</td><td class="rccb">20A+RCCB</td><td>NL WC</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>2.7-9</td><td class="mcb">16A</td><td>O cam (3 mach)</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>2.10</td><td class="mcb">10A</td><td>Den Master+WC</td><td class="wire">2x1.5</td></tr>
+          <tr><td>2.11</td><td class="mcb">10A</td><td>Den P2+P3+HL</td><td class="wire">2x1.5</td></tr>
+        </table>
+        <div class="warn">* 3 NL: moi cai co RCCB 25A 30mA rieng</div>
+        <div class="warn">* Tang tai lon nhat → MCB 40A</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TANG 3 ======== -->
+<div id="floor3" class="floor-section">
+  <div class="toggle-bar">
+    <div class="toggle-btn toggle-wires active" onclick="toggleLayer(this,'floor3','wires-layer')">Day dien</div>
+    <div class="toggle-btn toggle-icons active" onclick="toggleLayer(this,'floor3','icons-layer')">Thiet bi</div>
+    <div class="btn-download" onclick="downloadFloor('plan-floor3','Tang3')">Download PNG</div>
+  </div>
+  <div class="floor-layout">
+    <div class="plan-container" id="plan-floor3" onmousemove="showCoord(event,'coord3')" onclick="copyCoord(event)">
+      <img src="final-with-interior/base/layout3-if.png" alt="Tang 3">
+      <!-- FLOOR 3 - All positions from user -->
+      <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Blue trunk perimeter -->
+        <polyline points="44.3,56.4 4,56.4" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,1.2 4,93" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,1.2 96,1.2" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,1.2 96,33" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,60 96,93" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,93 96,93" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,33 96,33" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+
+        <!-- AC direct to MCB -->
+        <polyline points="44.3,56.4 44.3,31.2" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="44.3,31.2 51.9,31.2" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="44.3,56.4 44.3,57.8" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="44.3,57.8 51.9,57.8" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- NL from perimeter -->
+        <polyline points="91.3,33 91.3,29.5" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="94.2,60 94.2,58.0" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- === TOP BEDROOM: SW 29.8,45.4 → DLs + CH === -->
+        <polyline points="45.4,33 45.4,29.8" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- DL bed: SW → left → up -->
+        <polyline points="45.4,29.8 19.4,29.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="19.4,29.8 19.4,12.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="19.4,12.0 42.1,12.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="19.6,23.9 42.0,23.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- DL walkin: SW → right → up → right → up (H+V path) -->
+        <polyline points="45.9,29.8 61.2,29.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="61.2,29.7 61.2,21.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="60.6,21.6 80.4,21.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="80.4,21.9 80.7,10.2" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- CH: SW → left → up -->
+        <polyline points="45.4,29.8 30.3,29.8" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="30.3,29.8 30.3,16.6" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- === TOP BATHROOM: SW 21.4,87.7 → 3 DLs, connect to blue at 21.3,95.9 === -->
+        <polyline points="96,21.3 87.7,21.3" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="87.7,21.4 87.7,26.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="66.9,26.3 91.5,26.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === MID COMMON ROOM: SW 33.2,42.8 → 3 DLs === -->
+        <polyline points="42.8,33 42.8,33.2" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="42.8,33.2 27.0,33.2" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="27.0,33.2 27.0,55.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === STAIRS+HANH LANG: SW 55.7,60.9 → DLs === -->
+        <polyline points="60.9,56.4 60.9,55.7" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="60.9,56.4 44.3,56.4" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- Hanh lang DLs -->
+        <polyline points="60.9,55.7 51.5,55.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="51.5,55.7 51.5,35.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- Stairs DLs rectangle -->
+        <polyline points="60.9,55.7 73.5,55.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="73.5,53.4 73.5,55.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="73.5,53.4 92.2,53.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="92.2,53.4 92.2,35.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="92.2,35.6 64.1,35.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === BOTTOM BEDROOM: SW 57.3,45.4 → DLs + CH === -->
+        <polyline points="45.4,56.4 45.4,57.3" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- DL bed: SW → down along x≈45 → left -->
+        <polyline points="45.4,57.3 45.4,72.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="22.0,72.8 45.4,72.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="22.0,83.8 45.4,83.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="22.0,72.8 22.0,83.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- DL walkin: SW → right → down → right → down (H+V path) -->
+        <polyline points="45.6,57.3 61.0,57.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="61.0,57.4 61.1,67.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="61.1,67.9 79.6,67.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.6,67.9 79.7,74.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.7,74.5 79.6,82.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- CH: SW → down → left -->
+        <polyline points="45.4,57.3 34.6,57.3" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="34.6,57.3 34.6,78.0" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- Balcony light: SW 91.7,51.2 → light 96.3,37.8 -->
+        <polyline points="51.2,93 51.2,91.7" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="51.2,91.7 37.8,91.7" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="37.8,91.7 37.8,96.3" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- === BOTTOM BATHROOM: SW 68.5,87.6 → 3 DLs === -->
+        <!-- SW connect to blue line via right: 87.5,68.3 → 95.8,68.3 -->
+        <polyline points="87.5,68.3 95.8,68.3" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- SW → up to DL row, then horizontal -->
+        <polyline points="87.4,68.5 87.4,63.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="87.4,63.3 67.3,63.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.5,63.3 90.3,63.3" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- Sockets from perimeter -->
+        <polyline points="4,24.7 13.1,24.7" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,9.9 13.3,9.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="62.2,1.2 62.2,13.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,5.5 92.9,5.5" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="66.7,1.2 66.7,4.7" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,53.4 8.5,53.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,34.0 27.5,34.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,56.1 26.2,56.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,35.1 10.7,35.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,70.0 14.4,70.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,85.0 12.8,85.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,58.5 11.3,58.5" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="60.5,60 60.5,81.5" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,88.5 96.9,88.5" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="87.1,33 87.1,29.7" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,29.8 9.6,29.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="63.9,93 63.9,90.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="79.7,60 79.7,58.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="91.6,60 91.6,57.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+      </svg>
+      <div class="overlay icons-layer">
+        <!-- MCB -->
+        <div class="item" style="top:56.4%;left:44.3%"><div class="icon icon-panel">MCB<br>T3</div>
+          <div class="tooltip"><strong>MCB - TU DIEN TANG 3 (PHA C)</strong><br>MCB 32A tu tong | Cap 2x6mm2+PE</div></div>
+        <!-- AC -->
+        <div class="item" style="top:31.2%;left:51.9%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu tren</strong><br>MCB 20A | 2x2.5+PE</div></div>
+        <div class="item" style="top:57.8%;left:51.9%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu duoi</strong><br>MCB 20A | 2x2.5+PE</div></div>
+        <!-- NL -->
+        <div class="item" style="top:29.5%;left:91.3%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC tren</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+
+        <!-- === TOP BEDROOM === -->
+        <div class="item" style="top:16.6%;left:30.3%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - P.Ngu tren</strong></div></div>
+        <div class="item" style="top:12.1%;left:19.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:12.0%;left:42.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:23.9%;left:42.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:23.8%;left:19.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:10.4%;left:80.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:19.2%;left:80.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:29.8%;left:45.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu tren</strong><br>DL bed + walkin + CH<br>Cao 1.2m</div></div>
+        <!-- Top bathroom -->
+        <div class="item" style="top:26.3%;left:66.9%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:26.3%;left:79.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:26.3%;left:91.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC tren (IP44)</div></div>
+        <div class="item" style="top:21.4%;left:87.7%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC tren</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <!-- Top sockets -->
+        <div class="item" style="top:24.7%;left:13.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:9.9%;left:13.3%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:13.4%;left:62.2%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:5.5%;left:92.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:4.7%;left:66.7%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:29.7%;left:87.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC tren</div></div>
+        <div class="item" style="top:29.8%;left:9.6%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+
+        <!-- === MID COMMON ROOM === -->
+        <div class="item" style="top:38.4%;left:27.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong chung</div></div>
+        <div class="item" style="top:44.1%;left:27.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong chung</div></div>
+        <div class="item" style="top:50.1%;left:27.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong chung</div></div>
+        <div class="item" style="top:33.2%;left:42.8%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Phong chung</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <!-- Hanh lang DLs -->
+        <div class="item" style="top:35.7%;left:51.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:41.0%;left:51.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:50.9%;left:51.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <!-- Stairs DLs -->
+        <div class="item" style="top:53.4%;left:73.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:53.4%;left:92.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:35.6%;left:92.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:35.6%;left:64.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Cau thang</div></div>
+        <div class="item" style="top:55.7%;left:60.9%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Cau thang + Hanh lang</strong><br>Nut 1: DL cau thang (4)<br>Nut 2: DL hanh lang (3)<br>Cao 1.2m</div></div>
+        <!-- Mid sockets -->
+        <div class="item" style="top:34.0%;left:27.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong chung</div></div>
+        <div class="item" style="top:56.1%;left:26.2%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong chung</div></div>
+        <div class="item" style="top:35.1%;left:10.7%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong chung</div></div>
+        <div class="item" style="top:53.4%;left:8.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong chung</div></div>
+
+        <!-- === BOTTOM BEDROOM === -->
+        <div class="item" style="top:78.0%;left:34.6%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - P.Ngu duoi</strong></div></div>
+        <div class="item" style="top:72.8%;left:22.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi</div></div>
+        <div class="item" style="top:72.8%;left:45.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi</div></div>
+        <div class="item" style="top:83.8%;left:45.4%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi</div></div>
+        <div class="item" style="top:83.8%;left:22.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu duoi</div></div>
+        <div class="item" style="top:74.6%;left:79.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:81.9%;left:79.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:57.3%;left:45.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu duoi</strong><br>DL bed + walkin + CH<br>Cao 1.2m</div></div>
+        <!-- Bottom bathroom -->
+        <div class="item" style="top:63.5%;left:67.3%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:63.3%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:63.3%;left:90.3%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC duoi (IP44)</div></div>
+        <div class="item" style="top:68.5%;left:87.6%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC duoi</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <!-- Bottom sockets -->
+        <div class="item" style="top:70.0%;left:14.4%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:85.0%;left:12.8%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:58.5%;left:11.3%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:81.5%;left:60.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:88.5%;left:96.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:90.1%;left:63.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu duoi</div></div>
+        <div class="item" style="top:58.2%;left:79.7%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC duoi</div></div>
+        <div class="item" style="top:57.5%;left:89.0%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC duoi</div></div>
+        <div class="item" style="top:57.8%;left:94.2%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC duoi</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+
+        <!-- Balcony/outdoor light -->
+        <div class="item" style="top:96.3%;left:37.8%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">BL</div>
+          <div class="tooltip"><strong>Den ban cong</strong><br>LED IP65</div></div>
+        <div class="item" style="top:91.7%;left:51.2%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ban cong</strong><br>Cao 1.2m</div></div>
+        <!-- TM -->
+        <div class="item" style="top:48%;left:65%"><div class="icon icon-elev">TM</div>
+          <div class="tooltip">Thang may (di qua)</div></div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-card"><div class="coord-box" id="coord3"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card">
+        <h3>Tu Dien Tang 3 - <span class="phase-c">PHA C</span> - MCB 32A</h3>
+        <table>
+          <tr><th>Mach</th><th>CB</th><th>Tai</th><th>Day</th></tr>
+          <tr><td>3.1</td><td class="mcb">20A</td><td>DH P.Ngu 4</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>3.2</td><td class="mcb">20A</td><td>DH P.Ngu 5</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>3.3</td><td class="rccb">20A+RCCB</td><td>NL WC P.4</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>3.4</td><td class="rccb">20A+RCCB</td><td>NL WC P.5</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>3.5</td><td class="mcb">16A</td><td>OC P.4 (3)</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>3.6</td><td class="mcb">16A</td><td>OC P.5 (2)</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>3.7</td><td class="mcb">10A</td><td>Den P.4+WC</td><td class="wire">2x1.5</td></tr>
+          <tr><td>3.8</td><td class="mcb">10A</td><td>Den P.5+WC+HL</td><td class="wire">2x1.5</td></tr>
+        </table>
+        <div class="warn">* Tang 3 + Tang 4 chung PHA C</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TANG 4 ======== -->
+<div id="floor4" class="floor-section">
+  <div class="toggle-bar">
+    <div class="toggle-btn toggle-wires active" onclick="toggleLayer(this,'floor4','wires-layer')">Day dien</div>
+    <div class="toggle-btn toggle-icons active" onclick="toggleLayer(this,'floor4','icons-layer')">Thiet bi</div>
+    <div class="btn-download" onclick="downloadFloor('plan-floor4','Tang4')">Download PNG</div>
+  </div>
+  <div class="floor-layout">
+    <div class="plan-container" id="plan-floor4" onmousemove="showCoord(event,'coord4')" onclick="copyCoord(event)">
+      <img src="final-with-interior/base/layout4-if.png" alt="Tang 4">
+      <!-- FLOOR 4 - All positions from user -->
+      <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Blue trunk perimeter -->
+        <polyline points="40.6,62.7 4,62.7" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,10.5 4,98" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- Top blue: L-shape 4,10.5 → 65.2,10.6 → 65.7,0.3 → 96,0.3 -->
+        <polyline points="4,10.5 65.2,10.6" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="65.2,10.6 65.7,0.3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="65.7,0.3 96,0.3" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,0.3 96,35" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="96,62 96,98" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,98 96,98" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <polyline points="4,35 96,35" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+
+        <!-- AC direct to MCB -->
+        <polyline points="40.6,62.7 40.6,32.9" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <polyline points="40.6,32.9 46.4,32.9" fill="none" stroke="#e53935" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+        <!-- NL from perimeter -->
+        <polyline points="91.8,35 91.8,31.4" fill="none" stroke="#43A047" stroke-width="0.4" stroke-dasharray="1,0.5" opacity="0.7"/>
+
+        <!-- === TOP BEDROOM: SW 33.6,39.3 → DLs + CH === -->
+        <polyline points="39.3,35 39.3,33.6" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <!-- DL bed: SW → left → up -->
+        <polyline points="39.3,33.6 16.9,33.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.5,33.6 17.5,14.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.5,14.0 42.5,14.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="17.5,27.0 42.5,27.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- DL walkin: SW → right → up → right → up (H+V path) -->
+        <polyline points="39.4,33.4 57.8,33.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="57.8,33.4 58.4,22.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="58.4,22.7 81.8,22.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="80.8,22.7 80.8,6.8" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <!-- CH: SW → left → up -->
+        <polyline points="39.3,33.6 26.3,33.6" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="26.3,33.6 26.3,18.1" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- === TOP BATHROOM: SW 22.3,88.5 → 3 DLs, connect to blue at 22.0,96.0 === -->
+        <polyline points="96,22.0 88.5,22.0" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="88.5,22.3 88.5,27.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="65.2,27.7 91.6,27.6" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- Balcony top: SW 11.5,18.3 → light 8.3,35.1 -->
+        <polyline points="18.3,10.5 18.3,11.5" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="18.3,11.5 35.1,11.5" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="35.1,11.5 35.1,8.3" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- === STORAGE (MID): SW 54.1,38.2 → 3 DLs === -->
+        <polyline points="38.2,62.7 38.2,54.1" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="38.2,54.1 22.3,54.1" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="22.3,41.7 22.3,55.9" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === HANH LANG + STAIRS: SW 64.0,58.4 === -->
+        <polyline points="58.4,62.7 58.4,64.0" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="58.4,62.7 40.6,62.7" fill="none" stroke="#1565C0" stroke-width="0.4" stroke-dasharray="1.2,0.6" opacity="0.6"/>
+        <!-- Hanh lang DLs -->
+        <polyline points="58.4,64.0 48.6,64.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="48.6,64.0 48.6,38.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === WARSHIP ROOM: SW 65.7,39.4 → 4 DLs === -->
+        <polyline points="39.4,62.7 39.4,65.7" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="39.4,65.7 16.6,65.7" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="16.5,74.0 47.5,74.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="16.5,89.0 47.5,89.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="16.5,65.7 16.5,89.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- === WASHING AREA: SW(DL) 61.4,65.6 → 3 DLs === -->
+        <polyline points="65.6,62 65.6,61.4" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="65.6,61.4 79.5,61.4" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+        <polyline points="79.5,62.6 79.5,83.0" fill="none" stroke="#FFC107" stroke-width="0.4" stroke-dasharray="0.5,0.4" opacity="0.45"/>
+
+        <!-- Balcony bottom: SW 88.9,71.0 → light 91.6,83.1 -->
+        <polyline points="71.0,98 71.0,88.9" fill="none" stroke="#9C27B0" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.55"/>
+        <polyline points="71.0,88.9 83.1,88.9" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+        <polyline points="83.1,88.9 83.1,91.6" fill="none" stroke="#FF8F00" stroke-width="0.4" stroke-dasharray="0.7,0.4" opacity="0.55"/>
+
+        <!-- Sockets from perimeter -->
+        <polyline points="26.7,35 26.7,33.1" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,27.9 12.6,27.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,10.8 12.9,10.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="83.3,0.3 83.3,1.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="92.5,35 92.5,32.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="78.6,35 78.6,31.8" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,63.3 24.3,63.3" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,37.4 25.5,37.4" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,65.9 34.1,65.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,66.0 10.1,66.0" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="4,97.2 7.3,97.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="60.4,98 60.4,97.2" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+        <polyline points="96,78.9 95.5,78.9" fill="none" stroke="#7B1FA2" stroke-width="0.4" stroke-dasharray="0.8,0.5" opacity="0.4"/>
+      </svg>
+      <div class="overlay icons-layer">
+        <!-- MCB -->
+        <div class="item" style="top:62.7%;left:40.6%"><div class="icon icon-panel">MCB<br>T4</div>
+          <div class="tooltip"><strong>MCB - TU DIEN TANG 4 (PHA C)</strong><br>MCB 32A tu tong | Cap 2x6mm2+PE</div></div>
+        <!-- AC -->
+        <div class="item" style="top:32.9%;left:46.4%"><div class="icon icon-ac">AC</div>
+          <div class="tooltip"><strong>AC - P.Ngu tren</strong><br>MCB 20A | 2x2.5+PE</div></div>
+        <!-- NL -->
+        <div class="item" style="top:31.4%;left:91.8%"><div class="icon icon-wh">NL</div>
+          <div class="tooltip"><strong>NL - WC tren</strong><br>MCB 20A+RCCB 25A 30mA | 2x4+PE</div></div>
+
+        <!-- === TOP BEDROOM === -->
+        <div class="item" style="top:18.1%;left:26.3%"><div class="icon icon-chandelier">CH</div>
+          <div class="tooltip"><strong>Den chum - P.Ngu tren</strong></div></div>
+        <div class="item" style="top:14.0%;left:17.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:27.0%;left:17.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:14.0%;left:42.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:27.0%;left:42.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL P.Ngu tren</div></div>
+        <div class="item" style="top:18.4%;left:81.7%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:6.8%;left:82.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Walkin closet</div></div>
+        <div class="item" style="top:33.6%;left:39.3%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - P.Ngu tren</strong><br>DL bed + walkin + CH<br>Cao 1.2m</div></div>
+        <!-- Top bathroom -->
+        <div class="item" style="top:27.6%;left:91.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC (IP44)</div></div>
+        <div class="item" style="top:27.1%;left:77.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC (IP44)</div></div>
+        <div class="item" style="top:27.7%;left:65.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL WC (IP44)</div></div>
+        <div class="item" style="top:22.3%;left:88.5%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - WC tren</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <!-- Balcony top -->
+        <div class="item" style="top:8.3%;left:35.1%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">BL</div>
+          <div class="tooltip"><strong>Den ban cong tren</strong><br>LED IP65</div></div>
+        <div class="item" style="top:11.5%;left:18.3%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ban cong tren</strong><br>Cao 1.2m</div></div>
+        <!-- Top sockets -->
+        <div class="item" style="top:33.1%;left:26.7%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:27.9%;left:12.6%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:10.8%;left:12.9%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:1.9%;left:83.3%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC P.Ngu tren</div></div>
+        <div class="item" style="top:32.4%;left:92.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC tren</div></div>
+        <div class="item" style="top:31.8%;left:78.6%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC WC tren</div></div>
+
+        <!-- === STORAGE (MID) === -->
+        <div class="item" style="top:41.7%;left:22.8%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Kho</div></div>
+        <div class="item" style="top:48.5%;left:22.0%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Kho</div></div>
+        <div class="item" style="top:55.9%;left:22.3%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Kho</div></div>
+        <div class="item" style="top:54.1%;left:38.2%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Kho</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <!-- Hanh lang DLs -->
+        <div class="item" style="top:38.4%;left:48.6%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:46.7%;left:48.1%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:56.1%;left:48.2%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Hanh lang</div></div>
+        <div class="item" style="top:64.0%;left:58.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Hanh lang + Cau thang</strong><br>Nut 1: DL hanh lang (3)<br>Nut 2: Den cau thang (dao chieu)<br>Cao 1.2m</div></div>
+        <!-- Mid sockets -->
+        <div class="item" style="top:63.3%;left:24.3%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Kho</div></div>
+        <div class="item" style="top:37.4%;left:25.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Kho</div></div>
+
+        <!-- === WARSHIP ROOM (BOTTOM LEFT) === -->
+        <div class="item" style="top:74.0%;left:16.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong tho</div></div>
+        <div class="item" style="top:74.0%;left:47.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong tho</div></div>
+        <div class="item" style="top:89.0%;left:47.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong tho</div></div>
+        <div class="item" style="top:89.0%;left:16.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Phong tho</div></div>
+        <div class="item" style="top:65.7%;left:39.4%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Phong tho</strong><br>4 DL<br>Cao 1.2m</div></div>
+        <!-- Warship sockets -->
+        <div class="item" style="top:65.9%;left:34.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong tho</div></div>
+        <div class="item" style="top:66.0%;left:10.1%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong tho</div></div>
+        <div class="item" style="top:97.2%;left:7.3%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong tho</div></div>
+        <div class="item" style="top:97.2%;left:60.4%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Phong tho</div></div>
+
+        <!-- === WASHING AREA (BOTTOM RIGHT) === -->
+        <div class="item" style="top:62.6%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Khu giat</div></div>
+        <div class="item" style="top:75.5%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Khu giat</div></div>
+        <div class="item" style="top:83.0%;left:79.5%"><div class="icon icon-downlight">DL</div><div class="tooltip">DL Khu giat</div></div>
+        <div class="item" style="top:61.4%;left:65.6%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Khu giat</strong><br>3 DL<br>Cao 1.2m</div></div>
+        <div class="item" style="top:78.9%;left:95.5%"><div class="icon icon-outlet">OC</div><div class="tooltip">OC Khu giat</div></div>
+        <!-- Balcony bottom -->
+        <div class="item" style="top:91.6%;left:83.1%"><div class="icon icon-light" style="width:20px;height:20px;font-size:7px">BL</div>
+          <div class="tooltip"><strong>Den ban cong duoi</strong><br>LED IP65</div></div>
+        <div class="item" style="top:88.9%;left:71.0%"><div class="icon icon-switch">SW</div>
+          <div class="tooltip"><strong>CT - Den ban cong duoi</strong><br>Cao 1.2m</div></div>
+
+        <!-- TM -->
+        <div class="item" style="top:50%;left:65%"><div class="icon icon-elev">TM</div>
+          <div class="tooltip">Thang may (di qua)</div></div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-card"><div class="coord-box" id="coord4"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card">
+        <h3>Tu Dien Tang 4 - <span class="phase-c">PHA C</span> - MCB 32A</h3>
+        <table>
+          <tr><th>Mach</th><th>CB</th><th>Tai</th><th>Day</th></tr>
+          <tr><td>4.1</td><td class="mcb">20A</td><td>DH P.Da Nang</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>4.2</td><td class="rccb">20A+RCCB</td><td>NL WC T4</td><td class="wire">2x4+PE</td></tr>
+          <tr><td>4.3</td><td class="rccb">16A+RCCB</td><td>May giat</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>4.4</td><td class="mcb">16A</td><td>May say</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>4.5</td><td class="mcb">16A</td><td>OC P.Da Nang</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>4.6</td><td class="mcb">16A</td><td>OC khu giat</td><td class="wire">2x2.5+PE</td></tr>
+          <tr><td>4.7</td><td class="mcb">10A</td><td>Den P.Nang+WC</td><td class="wire">2x1.5</td></tr>
+          <tr><td>4.8</td><td class="mcb">10A</td><td>Den san thuong</td><td class="wire">2x1.5</td></tr>
+        </table>
+        <div class="warn">* May giat co RCCB 16A 30mA</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== DEN CAU THANG ======== -->
+<div id="staircase" class="floor-section">
+  <div class="main-panel-section">
+    <h2>Mach Den Cau Thang - Dao Chieu 4 Tang</h2>
+    <p style="color:#666;margin-bottom:12px;font-size:12px;">MCB 10A (PHA A, tu tong) | Day 2x1.5mm2 | Bat/tat den tu 4 vi tri</p>
+    <div class="stair-diagram">
+<span class="label">MCB 10A (PHA A - Tu dien tong)</span>
+  |
+  +--- <span class="phase-a">PHA (day nong)</span>
+  |
+  |    +======================+
+  |    |  <span class="label">SW1 - TANG 1</span>         |  Cong tac DAO CHIEU (2-way)
+  |    +=======+==+============+
+  |            |  |
+  |    +=======+==+============+
+  |    |  <span class="label">SW_TG2 - TANG 2</span>      |  Cong tac TRUNG GIAN (intermediate)
+  |    +=======+==+============+
+  |            |  |
+  |    +=======+==+============+
+  |    |  <span class="label">SW_TG3 - TANG 3</span>      |  Cong tac TRUNG GIAN (intermediate)
+  |    +=======+==+============+
+  |            |  |
+  |    +=======+==+============+
+  |    |  <span class="label">SW4 - TANG 4</span>         |  Cong tac DAO CHIEU (2-way)
+  |    +======================+
+  |            |
+  |    +-------+-------+-------+
+  |    |               |       |
+  |  <span style="color:#F9A825">DEN 1</span>          <span style="color:#F9A825">DEN 2</span>   <span style="color:#F9A825">DEN 3</span>
+  |  T1-T2           T2-T3    T3-T4
+  |  (LED 7-10W)     (LED)    (LED)
+  |    +-------+-------+-------+
+  |            |
+  +--- <span style="color:#888">NEUTRAL</span>
+
+<span class="label">CONG TAC CAN MUA:</span>
+  SW1 (T1) + SW4 (T4): Cong tac dao chieu (2-way) x2
+  SW_TG2 (T2) + SW_TG3 (T3): Cong tac trung gian (intermediate) x2</div>
+  </div>
+</div>
+
+<!-- ======== VAT TU ======== -->
+<div id="materials" class="floor-section">
+  <div class="main-panel-section">
+    <h2>Bang Tong Hop Vat Tu</h2>
+    <h3 style="color:#2E7D32;margin:16px 0 8px;">Tu Dien va Thiet Bi Dong Cat</h3>
+    <table class="material-table">
+      <tr><th>STT</th><th>Thiet bi</th><th>SL</th><th>Ghi chu</th></tr>
+      <tr><td>1</td><td>MCB 3P 80A (tu tong)</td><td>1</td><td>Schneider/LS</td></tr>
+      <tr><td>2</td><td>SPD 3P+N 40kA</td><td>1</td><td>Chong set</td></tr>
+      <tr><td>3</td><td>RCCB 4P 63A 30mA</td><td>1</td><td>Tong</td></tr>
+      <tr><td>4</td><td>MCB 3P 32A (thang may)</td><td>1</td><td></td></tr>
+      <tr><td>5</td><td>MCB 1P 32A (tang 1,3,4)</td><td>3</td><td></td></tr>
+      <tr><td>6</td><td>MCB 1P 40A (tang 2)</td><td>1</td><td></td></tr>
+      <tr><td>7</td><td>MCB 1P 20A (DH, NL)</td><td>16</td><td></td></tr>
+      <tr><td>8</td><td>MCB 1P 32A (bep tu)</td><td>1</td><td></td></tr>
+      <tr><td>9</td><td>MCB 1P 16A (OC, MG/MS)</td><td>11</td><td></td></tr>
+      <tr><td>10</td><td>MCB 1P 10A (den)</td><td>9</td><td></td></tr>
+      <tr><td>11</td><td style="color:#E65100">RCCB 25A 30mA (NL)</td><td>7</td><td>WC</td></tr>
+      <tr><td>12</td><td style="color:#E65100">RCCB 16A 30mA (MG)</td><td>1</td><td></td></tr>
+    </table>
+    <h3 style="color:#1565C0;margin:16px 0 8px;">Day Cap Dien</h3>
+    <table class="material-table">
+      <tr><th>Loai</th><th>m</th><th>Su dung</th></tr>
+      <tr><td>4x16mm2 + PE 10mm2</td><td>15</td><td>EVN → tu tong</td></tr>
+      <tr><td>5x6mm2</td><td>20</td><td>Thang may</td></tr>
+      <tr><td>2x6mm2 + PE</td><td>80</td><td>Cap tang + bep tu</td></tr>
+      <tr><td>2x4mm2 + PE</td><td>70</td><td>Nong lanh (7)</td></tr>
+      <tr><td>2x2.5mm2 + PE</td><td>300</td><td>OC + DH</td></tr>
+      <tr><td>2x1.5mm2</td><td>200</td><td>Den + CT</td></tr>
+      <tr><td>Dong 10mm2</td><td>15</td><td>Tiep dia</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ======== LUU Y ======== -->
+<div id="notes" class="floor-section">
+  <div class="main-panel-section">
+    <h2>Luu Y Thi Cong</h2>
+    <div class="notes-grid">
+      <div class="note-card"><strong>1. Dieu hoa</strong><br>MCB rieng 20A. O cam rieng cao 2.2m.</div>
+      <div class="note-card"><strong>2. Bep tu</strong><br>Day 6mm2, MCB 32A, o cam 32A chuyen dung.</div>
+      <div class="note-card"><strong>3. Nong lanh</strong><br>RCCB 30mA rieng. Day 4mm2. O cam 1.8m. PE tiep dia.</div>
+      <div class="note-card"><strong>4. May giat</strong><br>RCCB 16A 30mA. O cam 1.2m.</div>
+      <div class="note-card"><strong>5. Tiep dia</strong><br>&lt; 4 ohm. 2 coc 2.4m, cach nhau 3m.</div>
+      <div class="note-card"><strong>6. Day PE</strong><br>Mau vang-xanh. Bat buoc moi mach.</div>
+      <div class="note-card"><strong>7. Ong luon</strong><br>D20 (1.5mm2), D25 (2.5mm2), D32 (6mm2).</div>
+      <div class="note-card"><strong>8. Noi day</strong><br>Chi noi tai hop noi / o cam. Khong noi trong ong.</div>
+      <div class="note-card"><strong>9. WC</strong><br>Quat hut chung mach den WC. OC qua RCCB.</div>
+      <div class="note-card"><strong>10. Den cau thang</strong><br>LED 7-10W. 2 CT 2-way + 2 CT trung gian.</div>
+      <div class="note-card"><strong>11. Cap tang</strong><br>Hop gen ky thuat. 2x6mm2+PE.</div>
+      <div class="note-card"><strong>12. Danh so mach</strong><br>1.1, 1.2... 2.1, 2.2... de bao tri.</div>
+    </div>
+  </div>
+  <div class="main-panel-section" style="margin-top:12px;">
+    <h2>Do Cao Lap Dat</h2>
+    <table class="material-table">
+      <tr><th>Thiet bi</th><th>Cao</th></tr>
+      <tr><td>O cam thuong</td><td style="color:#2E7D32;font-weight:bold">0.3m</td></tr>
+      <tr><td>O cam bep</td><td style="color:#2E7D32;font-weight:bold">1.1m</td></tr>
+      <tr><td>O cam MG/MS</td><td style="color:#2E7D32;font-weight:bold">1.2m</td></tr>
+      <tr><td>Cong tac</td><td style="color:#2E7D32;font-weight:bold">1.2m</td></tr>
+      <tr><td>Tu dien</td><td style="color:#2E7D32;font-weight:bold">1.4m</td></tr>
+      <tr><td>O cam NL</td><td style="color:#2E7D32;font-weight:bold">1.8m</td></tr>
+      <tr><td>O cam DH</td><td style="color:#2E7D32;font-weight:bold">2.2m</td></tr>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+function downloadFloor(containerId, filename) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var btn = event.target;
+  btn.textContent = 'Dang xu ly...';
+  var imgEl = container.querySelector('img');
+  var svgEl = container.querySelector('svg');
+  var overlay = container.querySelector('.icons-layer');
+  var W = imgEl.naturalWidth, H = imgEl.naturalHeight;
+  var canvas = document.createElement('canvas');
+  canvas.width = W*2; canvas.height = H*2;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(2,2);
+  // Load image
+  var img2 = new Image();
+  img2.crossOrigin = 'anonymous';
+  img2.onload = function() {
+    ctx.drawImage(img2, 0, 0, W, H);
+    // Draw SVG
+    if (svgEl && svgEl.style.display !== 'none') {
+      var clone = svgEl.cloneNode(true);
+      clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+      clone.setAttribute('width',W);
+      clone.setAttribute('height',H);
+      var svgStr = new XMLSerializer().serializeToString(clone);
+      var svgImg = new Image();
+      svgImg.onload = function() {
+        ctx.drawImage(svgImg,0,0,W,H);
+        drawIconsAndSave();
+      };
+      svgImg.onerror = function() { drawIconsAndSave(); };
+      svgImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+    } else {
+      drawIconsAndSave();
+    }
+    function drawIconsAndSave() {
+      if (overlay && overlay.style.display !== 'none') {
+        var items = overlay.querySelectorAll('.item');
+        items.forEach(function(item) {
+          var y = parseFloat(item.style.top)/100*H;
+          var x = parseFloat(item.style.left)/100*W;
+          var icon = item.querySelector('.icon'); if(!icon) return;
+          var cs = getComputedStyle(icon);
+          var w = parseFloat(cs.width)||26, h = parseFloat(cs.height)||26;
+          ctx.fillStyle = cs.backgroundColor; ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+          var br = parseFloat(cs.borderRadius)||0;
+          if (br >= w/2-2) { ctx.beginPath(); ctx.arc(x,y,w/2,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+          else { ctx.fillRect(x-w/2,y-h/2,w,h); ctx.strokeRect(x-w/2,y-h/2,w,h); }
+          ctx.fillStyle = cs.color||'#fff';
+          ctx.font = 'bold '+(parseFloat(cs.fontSize)||9)+'px Arial';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(icon.textContent.trim().replace(/\s+/g,' '), x, y);
+        });
+      }
+      var link = document.createElement('a');
+      link.download = filename+'_electric.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      btn.textContent = 'Download PNG';
+    }
+  };
+  img2.onerror = function() { btn.textContent='Download PNG'; alert('Loi tai hinh'); };
+  img2.src = imgEl.src;
+}
+
+function showTab(tabId) {
+  document.querySelectorAll('.floor-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function toggleLayer(btn, floorId, layerClass) {
+  const container = document.getElementById('plan-' + floorId);
+  if (!container) return;
+  const layer = container.querySelector('.' + layerClass);
+  if (!layer) return;
+  btn.classList.toggle('active');
+  btn.classList.toggle('inactive');
+  layer.style.display = btn.classList.contains('active') ? '' : 'none';
+}
+
+// Coordinate display - shows in side panel coord-box
+function showCoord(e, boxId) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+  const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+  const box = document.getElementById(boxId);
+  if (box) box.innerHTML = '<span class="val">x: ' + x + '%&nbsp;&nbsp;y: ' + y + '%</span>';
+}
+
+// Click to copy
+function copyCoord(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+  const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+  const text = 'top:' + y + '%;left:' + x + '%';
+  navigator.clipboard.writeText(text).then(() => {
+    // Flash all coord boxes
+    document.querySelectorAll('.coord-box').forEach(b => {
+      if (b.querySelector('.val')) {
+        b.innerHTML = '<span class="val" style="color:#0ff">Copied: ' + text + '</span>';
+        setTimeout(() => { b.innerHTML = '<span class="val">x: ' + x + '%&nbsp;&nbsp;y: ' + y + '%</span>'; }, 1200);
+      }
+    });
+  });
+}
+
+// Make side panels sticky so coord-box stays visible while scrolling
+document.querySelectorAll('.side-panel').forEach(sp => {
+  sp.style.position = 'sticky';
+  sp.style.top = '10px';
+  sp.style.alignSelf = 'start';
+});
+</script>
+
+</body>
+</html>

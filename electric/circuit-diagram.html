@@ -327,7 +327,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
     <div class="btn-download" onclick="downloadFloor('plan-floor1','Tang1')">Download PNG</div>
   </div>
   <div class="floor-layout">
-    <div class="plan-container" id="plan-floor1" onmousemove="showCoord(event,'coord1')" onclick="copyCoord(event)">
+    <div class="plan-container" id="plan-floor1" <!-- onmousemove="showCoord(event,'coord1')" onclick="" -->>
       <img src="final-with-interior/base/layout1-if.png" alt="Tang 1">
       <!-- EXACT positions from user + aligned downlights -->
       <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -619,7 +619,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
       </div>
       <div class="panel-card">
         <h3>Toa Do (hover hinh, click de copy)</h3>
-        <div class="coord-box" id="coord1"><span class="label">Di chuot len hinh</span></div>
+        <div class="coord-box" style="display:none" id="coord1"><span class="label">Di chuot len hinh</span></div>
       </div>
       <div class="panel-card">
         <h3>Chu Thich</h3>
@@ -648,7 +648,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
     <div class="btn-download" onclick="downloadFloor('plan-floor2','Tang2')">Download PNG</div>
   </div>
   <div class="floor-layout">
-    <div class="plan-container" id="plan-floor2" onmousemove="showCoord(event,'coord2')" onclick="copyCoord(event)">
+    <div class="plan-container" id="plan-floor2" <!-- onmousemove="showCoord(event,'coord2')" onclick="" -->>
       <img src="final-with-interior/base/layout2-if.png" alt="Tang 2">
       <!-- FLOOR 2 - All positions from user -->
       <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -885,7 +885,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
       </div>
     </div>
     <div class="side-panel">
-      <div class="panel-card"><div class="coord-box" id="coord2"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card"><div class="coord-box" style="display:none" id="coord2"><span class="label">Di chuot len hinh</span></div></div>
       <div class="panel-card">
         <h3>Tu Dien Tang 2 - <span class="phase-b">PHA B</span> - MCB 40A</h3>
         <table>
@@ -915,7 +915,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
     <div class="btn-download" onclick="downloadFloor('plan-floor3','Tang3')">Download PNG</div>
   </div>
   <div class="floor-layout">
-    <div class="plan-container" id="plan-floor3" onmousemove="showCoord(event,'coord3')" onclick="copyCoord(event)">
+    <div class="plan-container" id="plan-floor3" <!-- onmousemove="showCoord(event,'coord3')" onclick="" -->>
       <img src="final-with-interior/base/layout3-if.png" alt="Tang 3">
       <!-- FLOOR 3 - All positions from user -->
       <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -1130,7 +1130,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
       </div>
     </div>
     <div class="side-panel">
-      <div class="panel-card"><div class="coord-box" id="coord3"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card"><div class="coord-box" style="display:none" id="coord3"><span class="label">Di chuot len hinh</span></div></div>
       <div class="panel-card">
         <h3>Tu Dien Tang 3 - <span class="phase-c">PHA C</span> - MCB 32A</h3>
         <table>
@@ -1158,7 +1158,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
     <div class="btn-download" onclick="downloadFloor('plan-floor4','Tang4')">Download PNG</div>
   </div>
   <div class="floor-layout">
-    <div class="plan-container" id="plan-floor4" onmousemove="showCoord(event,'coord4')" onclick="copyCoord(event)">
+    <div class="plan-container" id="plan-floor4" <!-- onmousemove="showCoord(event,'coord4')" onclick="" -->>
       <img src="final-with-interior/base/layout4-if.png" alt="Tang 4">
       <!-- FLOOR 4 - All positions from user -->
       <svg class="wire-svg wires-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -1339,7 +1339,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef1f5; color: #
       </div>
     </div>
     <div class="side-panel">
-      <div class="panel-card"><div class="coord-box" id="coord4"><span class="label">Di chuot len hinh</span></div></div>
+      <div class="panel-card"><div class="coord-box" style="display:none" id="coord4"><span class="label">Di chuot len hinh</span></div></div>
       <div class="panel-card">
         <h3>Tu Dien Tang 4 - <span class="phase-c">PHA C</span> - MCB 32A</h3>
         <table>
